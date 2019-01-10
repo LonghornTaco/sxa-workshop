@@ -1,0 +1,75 @@
+@using Sitecore.Extensions
+@using Sitecore.Mvc
+@using Sitecore.XA.Foundation.MarkupDecorator.Extensions
+@using Sitecore.XA.Foundation.SitecoreExtensions.Extensions
+@using Sitecore.XA.Foundation.RenderingVariants.Extensions
+@using Sitecore.XA.Foundation.RenderingVariants.Fields
+@using Sitecore.XA.Foundation.Variants.Abstractions.Fields
+
+@model SeTraining.Feature.SimpleComponent.Models.SimpleComponentModel
+
+<div @Html.Sxa().Component("simple-component", Model.Attributes)>
+    <div class="component-content">
+        <h1>@Html.Sitecore().Field("Title", Model)</h1>
+        <p>@Html.Sitecore().Field("Description", Model)</p>
+    </div>
+</div>
+
+
+public class SimpleComponentModel : RenderingModelBase
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+    }
+
+
+ public interface ISimpleComponentRepository : IModelRepository
+    {
+    }
+
+ public class SimpleComponentRepository : ModelRepository, ISimpleComponentRepository
+    {
+
+        public override IRenderingModelBase GetModel()
+        {
+            SimpleComponentModel model = new SimpleComponentModel();
+            FillBaseProperties(model);
+            model.Title = Rendering.DataSourceItem.Fields["Title"].GetValue(false);
+            model.Description = Rendering.DataSourceItem.Fields["Description"].GetValue(false);
+            return model;
+        }
+    }
+	
+	
+	public class SimpleComponentController : StandardController
+    {
+        private readonly ISimpleComponentRepository _repository;
+
+        public SimpleComponentController(ISimpleComponentRepository repository)
+        {
+            _repository = repository;
+        }
+
+        protected override object GetModel()
+        {
+            return _repository.GetModel();
+        }
+    }
+	
+	
+	public class RegisterServices : IServicesConfigurator
+    {
+        public void Configure(IServiceCollection serviceCollection)
+        {
+            serviceCollection.AddTransient<ISimpleComponentRepository, SimpleComponentRepository>();
+            serviceCollection.AddTransient<SimpleComponentController>();
+        }
+    }
+	
+	<configuration xmlns:patch="http://www.sitecore.net/xmlconfig/">
+  <sitecore>
+    <services>
+      <configurator type="SeTraining.Feature.SimpleComponent.Pipelines.IoC.RegisterServices, SeTraining.Feature.SimpleComponent" />
+    </services>
+  </sitecore>
+</configuration>
